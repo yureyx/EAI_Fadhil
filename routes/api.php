@@ -17,12 +17,11 @@ use Illuminate\Support\Facades\Route;
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
-
 });
 
-Route::apiResource('film/',CustomerController::class);
+Route::apiResource('film', FilmController::class);
 
-Route::POST('film/add', [FilmController::class, 'store']);
-Route::GET('film/view', [FilmController::class, 'index']);
-Route::DELETE('film/delete',[FilmController::class, 'destroy']);
-Route::PUT('film/update', [FilmController::class, 'update']);
+Route::post('film/add', [FilmController::class, 'store']);
+Route::get('film/view/{id}', [FilmController::class, 'show']);
+Route::delete('film/delete/{id}', [FilmController::class, 'destroy']);
+Route::post('film/update/{id}', [FilmController::class, 'update']);

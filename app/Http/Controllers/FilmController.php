@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Helpers\ApiFormatter;
 use App\Models\film;
 use Illuminate\Http\Request;
+use Exception;
 
 class FilmController extends Controller
 {
@@ -12,9 +14,9 @@ class FilmController extends Controller
      */
     public function index()
     {
-        $film = film::paginate(10);
+        $films = film::paginate(10);
         return response()->json([
-            'data' => $film
+            'data' => $films
         ]);
     }
 
@@ -23,7 +25,7 @@ class FilmController extends Controller
      */
     public function create()
     {
-
+        //
     }
 
     /**
@@ -37,7 +39,7 @@ class FilmController extends Controller
             'rating_film' => $request->rating_film,
             'tahun' => $request->tahun,
             'rating_age' => $request->rating_age,
-            'genre_film' => $request->tahun,
+            'genre_film' => $request->genre_film
             
         ]);
         return response()->json([
@@ -48,46 +50,89 @@ class FilmController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(film $films)
+    public function show($id)
     {
-        return response()->json([
-            'data' => $films
-        ]);
+        $data = film::where('id', '=', $id)->get();
+
+        if ($data) {
+            return ApiFormatter::createApi(200, 'Success', $data);
+        } else {
+            return ApiFormatter::createApi(400, 'Failed');
+        }
     }
 
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(film $film)
+
+     public function showgenre(string $genre_film)
+     {
+         $data = film::where('genre_film', '=', $genre_film)->get();
+ 
+         if ($data) {
+             return ApiFormatter::createApi(200, 'Success', $data);
+         } else {
+             return ApiFormatter::createApi(400, 'Failed');
+         }
+     }
+ 
+    public function search(Request $request)
     {
-        //
+        $query = $request->input('query');
+    
+        $films = Film::where('nama_film', 'LIKE', "%$query%")
+                    ->orWhere('sutradara_film', 'LIKE', "%$query%")
+                    ->orWhere('genre_film', 'LIKE', "%$query%")
+                    ->get();
+    
+        return view('films.search', compact('films', 'query'));
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, film $film )
+    public function update(Request $request, $id )
     {
-        $film->nama_film = $request->nama_film;
-        $film->sutradara_film = $request->sutradara_film;
-        $film->rating_film = $request->rating_film;
-        $film->tahun = $request->tahun;
-        $film->rating_age = $request->rating_age;
-        $film->genre_film = $request->genre_film;
-        
-        $film->save();
+        try {
+            $request->validate([
+                'nama_film' => 'required',
+                'sutradara_film' => 'required',
+                'rating_film' => 'required',
+                'tahun' => 'required',
+                'rating_age' => 'required',
+                'genre_film' => 'required',
+            ]);
 
-        return response()->json([
-            'data' => $film
-        ]);
+
+            $film = film::findOrFail($id);
+
+            $film->update([
+                'nama_film' => $request->nama_film,
+                'sutradara_film' => $request->sutradara_film,
+                'rating_film' => $request->rating_film,
+                'tahun' => $request->tahun,
+                'rating_age' => $request->rating_age,
+                'genre_film' => $request->genre_film
+            ]);
+
+            $data = film::where('id', '=', $film->id)->get();
+
+            if ($data) {
+                return ApiFormatter::createApi(20, 'Success', $data);
+            } else {
+                return ApiFormatter::createApi(400, 'Failed');
+            }
+        } catch (Exception $error) {
+            return ApiFormatter::createApi(400, 'Failed');
+        }
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(film $films)
+    public function destroy(film $film,)
     {
-        $films->delete();
+        $film->delete();
         return response()->json([
             'message' => 'film deleted'
         ], 204);
